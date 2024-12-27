@@ -1,11 +1,14 @@
 import os
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+from dotenv import load_dotenv
 import boto3
 from botocore.exceptions import ClientError
 
 app = Flask(__name__)
-
+CORS(app, origins="http://localhost:3000")
 # Fetch environment variables
+load_dotenv()  # This will load variables from a .env file
 AWS_REGION = os.getenv("AWS_REGION")
 S3_BUCKET = os.getenv("S3_BUCKET_NAME")
 
