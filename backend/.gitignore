@@ -2,3 +2,6 @@
 .terraform*
 *.tfstate
 .env
+locals.tf
+
+__pycache__
