@@ -16,14 +16,15 @@ terraform {
 }
 
 module "s3" {
-  source = "./modules/s3"
+  source             = "./modules/s3"
   upload_bucket_name = local.upload_bucket_name
-  queue_arn = module.sqs.sqs_queue_arn
-  
+  queue_arn          = module.sqs.sqs_queue_arn
+  queue_name = module.sqs.queue
+  queue_policy = module.sqs.queue_policy
 }
 
 module "sqs" {
-  source = "./modules/sqs"
-  queue_name = local.queue_name
+  source            = "./modules/sqs"
+  queue_name        = local.queue_name
   upload_bucket_arn = module.s3.bucket_arn
 }
