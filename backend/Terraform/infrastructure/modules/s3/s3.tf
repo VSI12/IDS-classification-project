@@ -41,4 +41,6 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     queue_arn     = var.queue_arn
     events        = ["s3:ObjectCreated:*"]
   }
+  
+  depends_on = [ var.queue_name, var.queue_policy]
 }
