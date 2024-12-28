@@ -3,3 +3,8 @@ variable "upload_bucket_name" {
   type        = string
   
 }
+variable "queue_arn" {
+  description = "The ARN of the SQS queue"
+  type        = string
+  
+}
