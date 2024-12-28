@@ -20,3 +20,8 @@ module "s3" {
   upload_bucket_name = var.upload_bucket_name
   
 }
+
+module "sqs" {
+  source = "./modules/sqs"
+  queue_name = var.queue_name
+}
