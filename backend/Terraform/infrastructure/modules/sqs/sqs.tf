@@ -13,7 +13,7 @@ data "aws_iam_policy_document" "queue" {
     condition {
       test     = "ArnEquals"
       variable = "aws:SourceArn"
-      values   = [aws_s3_bucket.bucket.arn]
+      values   = [var.upload_bucket_arn]
     }
   }
 }
