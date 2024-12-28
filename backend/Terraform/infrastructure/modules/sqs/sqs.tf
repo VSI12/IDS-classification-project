@@ -1,14 +1,18 @@
+resource "aws_sqs_queue" "file_upload_queue" {
+  name = var.queue_name
+}
+
 data "aws_iam_policy_document" "queue" {
   statement {
     effect = "Allow"
 
     principals {
-      type        = "*"
-      identifiers = ["*"]
+      type        = "Service"
+      identifiers = ["s3.amazonaws.com"]
     }
 
     actions   = ["sqs:SendMessage"]
-    resources = ["arn:aws:sqs:*:*:s3-event-notification-queue"]
+    resources = [aws_sqs_queue.file_upload_queue.arn]
 
     condition {
       test     = "ArnEquals"
@@ -17,7 +21,8 @@ data "aws_iam_policy_document" "queue" {
     }
   }
 }
-resource "aws_sqs_queue" "file_upload_queue" {
-  name = var.queue_name
-  policy = data.aws_iam_policy_document.queue.json
+
+resource "aws_sqs_queue_policy" "file_upload_queue_policy" {
+  queue_url = aws_sqs_queue.file_upload_queue.id
+  policy    = data.aws_iam_policy_document.queue.json
 }
