@@ -21,3 +21,12 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_c
     }
   }
 }
+
+resource "aws_s3_bucket_notification" "bucket_notification" {
+  bucket = aws_s3_bucket.upload_bucket.id
+
+  queue {
+    queue_arn     = var.queue_arn
+    events        = ["s3:ObjectCreated:*"]
+  }
+}
