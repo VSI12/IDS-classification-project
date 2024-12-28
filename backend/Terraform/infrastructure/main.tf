@@ -18,6 +18,7 @@ terraform {
 module "s3" {
   source = "./modules/s3"
   upload_bucket_name = var.upload_bucket_name
+  queue_arn = module.sqs.queue_name.arn
   
 }
 
