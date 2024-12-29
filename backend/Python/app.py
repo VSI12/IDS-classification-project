@@ -6,7 +6,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 app = Flask(__name__)
-CORS(app, origins="http://localhost:3000")
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, methods=["GET", "POST", "OPTIONS"])
 # Fetch environment variables
 load_dotenv()  # This will load variables from a .env file
 AWS_REGION = os.getenv("AWS_REGION")
@@ -15,7 +15,7 @@ S3_BUCKET = os.getenv("S3_BUCKET_NAME")
 # Initialize the S3 client
 s3_client = boto3.client("s3", region_name=AWS_REGION)
 
-@app.route('/api/generate-presigned-url', methods=['POST'])
+@app.route('/generate-presigned-url', methods=['POST'])
 def generate_presigned_url():
     try:
         data = request.json
@@ -38,6 +38,16 @@ def generate_presigned_url():
         return jsonify({"url": presigned_url})
     except ClientError as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/process', methods=['POST'])
+def process_model():
+    data = request.json
+    model = data.get("model")
+    if model in ["model_1", "model_2", "model_3"]:
+        # Process the selected model
+        return jsonify({"message": f"Model {model} selected and processing started!"}), 200
+    else:
+        return jsonify({"error": "Invalid model selected"}), 400
 
 if __name__ == "__main__":
     app.run(debug=True)
