@@ -8,12 +8,14 @@ from botocore.exceptions import ClientError
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, methods=["GET", "POST", "OPTIONS"])
 # Fetch environment variables
-load_dotenv()  # This will load variables from a .env file
+load_dotenv()  
 AWS_REGION = os.getenv("AWS_REGION")
 S3_BUCKET = os.getenv("S3_BUCKET_NAME")
+SQS_QUEUE_URL = os.getenv("SQS_URL")
 
-# Initialize the S3 client
+# Initialize the S3 and SQS client
 s3_client = boto3.client("s3", region_name=AWS_REGION)
+sqs_client = boto3.client("sqs", region_name=AWS_REGION)
 
 @app.route('/generate-presigned-url', methods=['POST'])
 def generate_presigned_url():
@@ -38,7 +40,7 @@ def generate_presigned_url():
         return jsonify({"url": presigned_url})
     except ClientError as e:
         return jsonify({"error": str(e)}), 500
-
+        
 @app.route('/process', methods=['POST'])
 def process_model():
     data = request.json
