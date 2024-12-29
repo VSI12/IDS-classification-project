@@ -40,6 +40,8 @@ def generate_presigned_url():
         )
         return jsonify({"url": presigned_url})
     except ClientError as e:
+        print(f"Error generating presigned URL: {str(e)}")
+        return jsonify({"error": "Failed to generate presigned URL"}), 500
 
 def receive_message_from_queue():
     try:
