@@ -40,7 +40,42 @@ def generate_presigned_url():
         return jsonify({"url": presigned_url})
     except ClientError as e:
         return jsonify({"error": str(e)}), 500
-        
+
+def receive_message_from_queue():
+    try:
+        # Receive messages from the queue
+        response = sqs_client.receive_message(
+            QueueUrl=SQS_QUEUE_URL,
+            MaxNumberOfMessages=1,  # Number of messages to retrieve
+            WaitTimeSeconds=10      # Long polling duration
+        )
+
+        messages = response.get("Messages", [])
+        if messages:
+            message = messages[0]
+            receipt_handle = message["ReceiptHandle"]
+
+            # Parse the message body
+            body = json.loads(message["Body"])
+
+            # Extract bucket and key details from the message
+            s3_info = json.loads(body["Message"])  # SNS message might wrap the actual info
+            bucket_name = s3_info["Records"][0]["s3"]["bucket"]["name"]
+            file_key = s3_info["Records"][0]["s3"]["object"]["key"]
+
+            # Delete the message from the queue after processing
+            sqs_client.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=receipt_handle)
+
+            return bucket_name, file_key
+
+        else:
+            print("No messages in the queue.")
+            return None, None
+
+    except Exception as e:
+        print(f"Error receiving message: {str(e)}")
+        return None, None
+
 @app.route('/process', methods=['POST'])
 def process_model():
     data = request.json
