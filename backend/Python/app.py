@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -39,7 +40,6 @@ def generate_presigned_url():
         )
         return jsonify({"url": presigned_url})
     except ClientError as e:
-        return jsonify({"error": str(e)}), 500
 
 def receive_message_from_queue():
     try:
@@ -62,11 +62,12 @@ def receive_message_from_queue():
             s3_info = json.loads(body["Message"])  # SNS message might wrap the actual info
             bucket_name = s3_info["Records"][0]["s3"]["bucket"]["name"]
             file_key = s3_info["Records"][0]["s3"]["object"]["key"]
+            download_path = f"/tmp/{file_key.split('/')[-1]}"
 
             # Delete the message from the queue after processing
             sqs_client.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=receipt_handle)
 
-            return bucket_name, file_key
+            return bucket_name, file_key, download_path
 
         else:
             print("No messages in the queue.")
@@ -76,15 +77,22 @@ def receive_message_from_queue():
         print(f"Error receiving message: {str(e)}")
         return None, None
 
+def download_file_from_s3(bucket_name, file_key, download_path):
+    try:
+        s3_client.download_file(Bucket=bucket_name, Key=file_key, Filename=download_path)
+        print(f"File downloaded to {download_path}")
+        return download_path
+    except Exception as e:
+        print(f"Error downloading file: {str(e)}")
+        return None
+
 @app.route('/process', methods=['POST'])
 def process_model():
-    data = request.json
-    model = data.get("model")
-    if model in ["model_1", "model_2", "model_3"]:
-        # Process the selected model
-        return jsonify({"message": f"Model {model} selected and processing started!"}), 200
-    else:
-        return jsonify({"error": "Invalid model selected"}), 400
+    from ids_logic import models
+    receive_message_from_queue()
+    download_file_from_s3(bucket_name, file_key, download_path)
+    dataset = download_path
+    models(dataset)
 
 if __name__ == "__main__":
     app.run(debug=True)
