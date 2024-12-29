@@ -1,59 +1,65 @@
-"use client"
-import React, { useState } from "react";
+"use client";
+
+import React from "react";
 
 const ModelSelectionForm: React.FC = () => {
-  const [selectedModel, setSelectedModel] = useState<string>("model_1");
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const handleModelSelect = async (model: string) => {
     try {
       const response = await fetch("http://localhost:5000/process", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ model: selectedModel }),
+        body: JSON.stringify({ model }),
       });
-      
 
       if (response.ok) {
-        const data = await response.json();
-        alert("Model selected and processing started: " + data.message);
+        alert(`Model "${model}" submitted successfully!`);
       } else {
-        console.error("Failed to process the request.");
-        alert("Error processing request.");
+        alert(`Error submitting model: ${response.statusText}`);
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred.");
+      alert(`Error connecting to the server: ${error}`);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
-      <label htmlFor="model" className="font-semibold">
-        Select Model:
-      </label>
-      <select
-        name="model"
-        id="model"
-        value={selectedModel}
-        onChange={(e) => setSelectedModel(e.target.value)}
-        className="p-2 border rounded"
-      >
-        <option value="model_1">Model 1</option>
-        <option value="model_2">Model 2</option>
-        <option value="model_3">Model 3</option>
-      </select>
-      <button
-        type="submit"
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Start Classification
-      </button>
-    </form>
+    <div style={{ textAlign: "center", padding: "20px" }}>
+      <h2>Select a Model for Classification</h2>
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "20px" }}>
+        <button
+          onClick={() => handleModelSelect("model_1")}
+          style={buttonStyle}
+        >
+          Model 1
+        </button>
+        <button
+          onClick={() => handleModelSelect("model_2")}
+          style={buttonStyle}
+        >
+          Model 2
+        </button>
+        <button
+          onClick={() => handleModelSelect("model_3")}
+          style={buttonStyle}
+        >
+          Model 3
+        </button>
+      </div>
+    </div>
   );
+};
+
+const buttonStyle = {
+  padding: "15px 30px",
+  fontSize: "18px",
+  backgroundColor: "#007BFF",
+  color: "white",
+  border: "none",
+  borderRadius: "5px",
+  cursor: "pointer",
+  textAlign: "center" as "center",
+  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
 };
 
 export default ModelSelectionForm;
