@@ -1,3 +1,4 @@
+import joblib
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier 
@@ -41,15 +42,18 @@ y_encoded = label_encoder.fit_transform(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
 
 
-#models
 modelRFC = RandomForestClassifier(n_estimators=100, random_state=42)
 modelRFC.fit(X_train, y_train)
+joblib.dump(modelRFC, 'models/modelRFC.joblib')
 
 modelDTC = DecisionTreeClassifier(random_state=42)
 modelDTC.fit(X_train, y_train)
+joblib.dump(modelDTC, 'models/modelDTC.joblib')
 
 modelKNN = KNeighborsClassifier()
 modelKNN.fit(X_train, y_train)
+joblib.dump(modelKNN, 'models/modelKNN.joblib')
 
-modelGNB = GaussianNB ()
+modelGNB = GaussianNB()
 modelGNB.fit(X_train, y_train)
+joblib.dump(modelGNB, 'models/modelGNB.joblib')
