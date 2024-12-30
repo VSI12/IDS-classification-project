@@ -43,58 +43,93 @@ def generate_presigned_url():
         print(f"Error generating presigned URL: {str(e)}")
         return jsonify({"error": "Failed to generate presigned URL"}), 500
 
-def receive_message_from_queue():
+def process_sqs_message():
+    # Receive message from SQS
+    response = sqs_client.receive_message(
+        QueueUrl=SQS_QUEUE_URL,
+        MaxNumberOfMessages=1,
+        WaitTimeSeconds=10
+    )
+    messages = response.get("Messages", [])
+    if not messages:
+        print("No messages in the queue")
+        return
+
+    # Parse message
+    sqs_message = messages[0]
+    receipt_handle = sqs_message["ReceiptHandle"]
+    message_body = json.loads(sqs_message["Body"])
+    records = message_body.get("Records", [])
+
+    if not records:
+        print("No S3 event records found")
+        return
+
+    # Extract bucket and object key
+    s3_record = records[0]["s3"]
+    bucket_name = s3_record["bucket"]["name"]
+    object_key = s3_record["object"]["key"]
+
+    print(f"Received file: {object_key} from bucket: {bucket_name}")
+
+    # Download file from S3
+    local_path = f"/tmp/{object_key}"
+    s3_client.download_file(bucket_name, object_key, local_path)
+    print(f"File downloaded to: {local_path}")
+
+    # # Process the file
+    # try:
+    #     process_file(local_path)
+    # except Exception as e:
+    #     print(f"Error processing file: {e}")
+    #     return
+
+    # Delete message from SQS
     try:
-        # Receive messages from the queue
-        response = sqs_client.receive_message(
-            QueueUrl=SQS_QUEUE_URL,
-            MaxNumberOfMessages=1,  # Number of messages to retrieve
-            WaitTimeSeconds=10      # Long polling duration
-        )
+        sqs_client.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=receipt_handle)
+        print("Message deleted from queue")
 
-        messages = response.get("Messages", [])
-        if messages:
-            message = messages[0]
-            receipt_handle = message["ReceiptHandle"]
-
-            # Parse the message body
-            body = json.loads(message["Body"])
-
-            # Extract bucket and key details from the message
-            s3_info = json.loads(body["Message"])  # SNS message might wrap the actual info
-            bucket_name = s3_info["Records"][0]["s3"]["bucket"]["name"]
-            file_key = s3_info["Records"][0]["s3"]["object"]["key"]
-            download_path = f"/tmp/{file_key.split('/')[-1]}"
-
-            # Delete the message from the queue after processing
-            sqs_client.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=receipt_handle)
-
-            return bucket_name, file_key, download_path
-
-        else:
-            print("No messages in the queue.")
-            return None, None
-
+    except KeyError as e:
+        print(f"KeyError in SQS message: {e}")
+        return None, None, None
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        return None, None, None
     except Exception as e:
-        print(f"Error receiving message: {str(e)}")
-        return None, None
+        print(f"Error receiving message: {e}")
+        return None, None, None
 
-def download_file_from_s3(bucket_name, file_key, download_path):
-    try:
-        s3_client.download_file(Bucket=bucket_name, Key=file_key, Filename=download_path)
-        print(f"File downloaded to {download_path}")
-        return download_path
-    except Exception as e:
-        print(f"Error downloading file: {str(e)}")
-        return None
+
+
+# def download_file_from_s3(bucket_name, file_key, download_path):
+#     try:
+#         s3_client.download_file(Bucket=bucket_name, Key=file_key, Filename=download_path)
+#         print(f"File downloaded to {download_path}")
+#         return download_path
+#     except Exception as e:
+#         print(f"Error downloading file: {str(e)}")
+#         return None
 
 @app.route('/process', methods=['POST'])
 def process_model():
     from ids_logic import models
-    receive_message_from_queue()
-    download_file_from_s3(bucket_name, file_key, download_path)
-    dataset = download_path
-    models(dataset)
+    process_sqs_message()
+    
+    
+    # if not bucket_name or not file_key or not download_path:
+    #     return jsonify({"error": "Failed to process SQS message or download file"}), 400
+    
+    # dataset = download_file_from_s3(bucket_name, file_key, download_path)
+    # if not dataset:
+    #     return jsonify({"error": "Failed to download file from S3"}), 500
+    
+    # try:
+    #     result = models(dataset)  # Assuming `models` processes the dataset and returns a result
+    #     return jsonify({"result": result}), 200
+    # except Exception as e:
+    #     print(f"Error processing model: {str(e)}")
+    #     return jsonify({"error": "Failed to process model"}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
