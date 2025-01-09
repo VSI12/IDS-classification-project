@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 from models import modelRFC, modelDTC, modelKNN, modelGNB
 from datetime import datetime
+from flask import request, jsonify
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -39,8 +40,13 @@ def preprocess(dataset):
     try:
         from models import X_columns
         processed_data = pd.read_csv(dataset, header=None, names=col_names)
+        print("Initial dataset shape:", processed_data.shape)
+
         processed_data = pd.get_dummies(processed_data)
+        print("Dataset after get_dummies:", processed_data.shape)
+
         processed_data = processed_data.reindex(columns = X_columns, fill_value=0)
+        print("Dataset after reindex:", processed_data.shape)
     except Exception as e:
         print(f"Error preprocessing data: {str(e)}")
         return None
