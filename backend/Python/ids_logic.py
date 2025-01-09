@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 from models import modelRFC, modelDTC, modelKNN, modelGNB
 from datetime import datetime
+from flask import request, jsonify
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -36,26 +37,39 @@ label_mapping = {
 }
 
 def preprocess(dataset):
-    from model import X_columns
-    processed_data = pd.read_csv(dataset, header=None, names=col_names)
-    processed_data = pd.get_dummies(new_data)
-    processed_data = new_data.reindex(columns = X_columns, fill_value=0)
+    try:
+        from models import X_columns
+        processed_data = pd.read_csv(dataset, header=None, names=col_names)
+        print("Initial dataset shape:", processed_data.shape)
 
-    return processed_data
+        processed_data = pd.get_dummies(processed_data)
+        print("Dataset after get_dummies:", processed_data.shape)
 
-def models(dataset):
-    processed_data = preprocess(dataset)
-    model = request.json.get("model")
-    if model == "model_1":
-        DecisionTree(processed_data)
-    elif model == "model_2":
-        RandomForest(processed_data)
-    elif model == "model_3":
-        KNN(processed_data)
-    elif model == "model_4":  # For GaussianNB
-        GaussianNB(processed_data)
-    else:
-        return jsonify({"error": "Invalid model selected"}), 400
+        processed_data = processed_data.reindex(columns = X_columns, fill_value=0)
+        print("Dataset after reindex:", processed_data.shape)
+    except Exception as e:
+        print(f"Error preprocessing data: {str(e)}")
+        return None
+
+    return processed_data, 200
+
+def models(processed_data):
+    try:
+        model = request.json.get("model")
+        if model == "model_1":
+            DecisionTree(processed_data)
+        elif model == "model_2":
+            RandomForest(processed_data)
+        elif model == "model_3":
+            KNN(processed_data)
+        elif model == "model_4":  # For GaussianNB
+            GaussianNB(processed_data)
+        else:
+            return jsonify({"error": "Invalid model selected"}), 400
+        
+    except Exception as e:
+        print(f"Error generating predictions: {str(e)}")
+        return none
     
     return img_base64, 200
 #DECISION TREE CLASSIFIER

@@ -73,9 +73,14 @@ def process_sqs_message():
     print(f"Received file: {object_key} from bucket: {bucket_name}")
 
     # Download file from S3
-    local_path = f"/tmp/{object_key}"
-    s3_client.download_file(bucket_name, object_key, local_path)
-    print(f"File downloaded to: {local_path}")
+    try:
+        local_path = f"/tmp/{object_key}"
+        s3_client.download_file(bucket_name, object_key, local_path)
+        print(f"File downloaded to: {local_path}")
+        return local_path
+    except Exception as e:
+        print(f"Error processing file: {e}")
+        return
 
     # # Process the file
     # try:
@@ -103,7 +108,7 @@ def process_sqs_message():
 
 # def download_file_from_s3(bucket_name, file_key, download_path):
 #     try:
-#         s3_client.download_file(Bucket=bucket_name, Key=file_key, Filename=download_path)
+#         s3_client.download_file(Bucket=bucket_name, Key=file_key,None Filename=download_path)
 #         print(f"File downloaded to {download_path}")
 #         return download_path
 #     except Exception as e:
@@ -112,8 +117,9 @@ def process_sqs_message():
 
 @app.route('/process', methods=['POST'])
 def process_model():
-    from ids_logic import models
-    process_sqs_message()
+    from ids_logic import models, preprocess
+    local_path = process_sqs_message()
+    print(local_path)
     
     
     # if not bucket_name or not file_key or not download_path:
@@ -122,13 +128,16 @@ def process_model():
     # dataset = download_file_from_s3(bucket_name, file_key, download_path)
     # if not dataset:
     #     return jsonify({"error": "Failed to download file from S3"}), 500
-    
-    # try:
-    #     result = models(dataset)  # Assuming `models` processes the dataset and returns a result
-    #     return jsonify({"result": result}), 200
-    # except Exception as e:
-    #     print(f"Error processing model: {str(e)}")
-    #     return jsonify({"error": "Failed to process model"}), 500
+    processed_data = preprocess(local_path)
+    if processed_data is None:
+        return jsonify({"error": "Preprocessing failed"}), 500
+        
+    try:
+        result = models(processed_data)  # Assuming `models` processes the dataset and returns a result
+        return jsonify({"result": result}), 200
+    except Exception as e:
+        print(f"Error processing model: {str(e)}")
+        return jsonify({"error": "Failed to process model"}), 500
 
 
 if __name__ == "__main__":
