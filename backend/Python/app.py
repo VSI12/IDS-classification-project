@@ -87,7 +87,10 @@ def process_sqs_message():
 def process_model():
     from ids_logic import models, preprocess
     local_path = process_sqs_message()
-    print(local_path)
+    if not local_path:
+        return jsonify({"error": "Failed to download the file from S3."}), 500
+        
+    print(f"File downloaded to {local_path}")
     
     
     processed_data = preprocess(local_path)
