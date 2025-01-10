@@ -86,23 +86,31 @@ def process_sqs_message():
 @app.route('/process', methods=['POST'])
 def process_model():
     from ids_logic import models, preprocess
-    local_path = process_sqs_message()
-    if not local_path:
-        return jsonify({"error": "Failed to download the file from S3."}), 500
-        
-    print(f"File downloaded to {local_path}")
-    
-    
-    processed_data = preprocess(local_path)
-    if processed_data is None:
-        return jsonify({"error": "Preprocessing failed"}), 500
-        
+
     try:
-        result = models(processed_data)  # Assuming `models` processes the dataset and returns a result
+        # Process the incoming SQS message (download the dataset)
+        local_path = process_sqs_message()
+        if not local_path:
+            return jsonify({"error": "Failed to download the file from S3."}), 500
+        
+        print(f"File downloaded to {local_path}")
+
+        # Preprocess the data
+        processed_data, status = preprocess(local_path)
+        if processed_data is None:
+            return jsonify({"error": "Preprocessing failed"}), 500
+
+        # Process the model
+        result = models(processed_data)
+        if result is None:
+            return jsonify({"error": "Model processing failed"}), 500
+
+        # Successfully processed and returned predictions
         return jsonify({"result": result}), 200
+    
     except Exception as e:
         print(f"Error processing model: {str(e)}")
-        return jsonify({"error": "Failed to process model"}), 500
+        return jsonify({"error": f"Failed to process model: {str(e)}"}), 500
     
     try:
         sqs_client.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=receipt_handle)
