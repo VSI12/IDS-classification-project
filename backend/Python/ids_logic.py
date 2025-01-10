@@ -56,22 +56,25 @@ def preprocess(dataset):
 def models(processed_data):
     try:
         model = request.json.get("model")
+        if not model:
+            return jsonify({"error": "No model specified."}), 400
+        
+        # Based on the model name, choose which function to run
         if model == "model_1":
-            DecisionTree(processed_data)
+            return DecisionTree(processed_data)
         elif model == "model_2":
-            RandomForest(processed_data)
+            return RandomForest(processed_data)
         elif model == "model_3":
-            KNN(processed_data)
+            return KNN(processed_data)
         elif model == "model_4":  # For GaussianNB
-            GaussianNB(processed_data)
+            return GaussianNB(processed_data)
         else:
             return jsonify({"error": "Invalid model selected"}), 400
-        
     except Exception as e:
         print(f"Error generating predictions: {str(e)}")
-        return None
+        return jsonify({"error": f"Error generating predictions: {str(e)}"}), 500
     
-    return 200
+    
 #DECISION TREE CLASSIFIER
 def DecisionTree(new_data):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
