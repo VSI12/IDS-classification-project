@@ -69,9 +69,9 @@ def models(processed_data):
         
     except Exception as e:
         print(f"Error generating predictions: {str(e)}")
-        return none
+        return None
     
-    return img_base64, 200
+    return 200
 #DECISION TREE CLASSIFIER
 def DecisionTree(new_data):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
