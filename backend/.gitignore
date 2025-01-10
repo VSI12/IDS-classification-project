@@ -5,3 +5,4 @@
 locals.tf
 
 __pycache__
+*.ipynb
