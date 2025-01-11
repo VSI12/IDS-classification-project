@@ -81,10 +81,19 @@ def DecisionTree(new_data):
     predictions = modelDTC.predict(new_data)
     predicted_labels = [label_mapping.get(pred, "Unknown") for pred in predictions]
 
+    print(f"Raw Predictions: {predictions}")
     # Create a DataFrame for better visualization
     results_df = pd.DataFrame({'Predicted Label': predicted_labels})
     label_counts = results_df['Predicted Label'].value_counts()
+# Step 2: Map predictions to human-readable labels
+    predicted_labels = [label_mapping.get(pred, "Unknown") for pred in predictions]
+    print(f"Mapped Predictions: {predicted_labels}")  # Debug mapped predictions
 
+    # Check if all predictions are mapping correctly
+    unmapped_predictions = [pred for pred in predictions if pred not in label_mapping]
+    if unmapped_predictions:
+        print(f"Unmapped Predictions: {unmapped_predictions}")
+        print("Consider adding these to the label_mapping dictionary.")
     # Plotting the distribution of predictions
     fig, ax = plt.subplots()
     label_counts.plot(kind='bar', ax=ax, title='Distribution of Predictions')
